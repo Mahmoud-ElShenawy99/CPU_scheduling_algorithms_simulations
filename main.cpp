@@ -36,6 +36,21 @@ struct algorithm {
     int quantum;
 };
 
+void bubbleSort(process *processes[], int number_of_processes)
+{
+    int i, j;
+    process *temp;
+    for (i = 0; i < number_of_processes - 1; i++)
+
+        for (j = 0; j < number_of_processes - i - 1; j++)
+            if (processes[j]->arrivalTime > processes[j+1]->arrivalTime)
+            {
+                temp=processes[j+1];
+                processes[j+1]=processes[j];
+                processes[j]=temp;
+            }
+
+}
 void firstComeFirstServe(process *processes[], int number_of_processes, int total_serving_time) {
     queue<process *> waiting_queue;
     process *running_process = NULL;
@@ -79,7 +94,6 @@ void firstComeFirstServe(process *processes[], int number_of_processes, int tota
     processes[number_of_processes] = running_process;
     waiting_queue.pop();
 }
-
 void show(process *processes[], int numberOfProcesses) {
     for (int i = 0; i < numberOfProcesses; i++) {
         cout << "Name:" << processes[i]->name << " ";
@@ -95,6 +109,7 @@ void show(process *processes[], int numberOfProcesses) {
 }
 
 void trace(process *processes[], algorithm algo, int totalServingTime, int number_of_processes) {
+    bubbleSort(processes,number_of_processes);
     if (algo.name == 1)
         cout << "FCFS  ";
     else if (algo.name ==2)
@@ -132,6 +147,7 @@ void trace(process *processes[], algorithm algo, int totalServingTime, int numbe
 }
 
 void state(process *processes[], algorithm algo, int totalServingTime, int number_of_processes) {
+    bubbleSort(processes,number_of_processes);
     float mean = 0;
     if (algo.name == 1)
         cout << "FCFS" << endl;
@@ -146,7 +162,6 @@ void state(process *processes[], algorithm algo, int totalServingTime, int numbe
     cout << "Process  ";
     for (int i = 0; i < number_of_processes; i++) {
         cout << "  |  " << processes[i]->name;
-
     }
     cout << "  |" << endl;
 
@@ -188,7 +203,7 @@ void roundRobin(process *processes[], int number_of_processes, int total_serving
     unordered_map<int,process*> processes_map;
     deque<process *> waiting_queue;
     process *running_process = NULL;
-
+    int j=0;
     int q=0;
     for (int i = 0; i < number_of_processes; i++) {
         processes_map[processes[i]->arrivalTime]=processes[i];
@@ -227,6 +242,8 @@ void roundRobin(process *processes[], int number_of_processes, int total_serving
                 running_process->finishTime = i+1;
                 running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
                 running_process->normTurn=running_process->turnaroundTime/float(running_process->servingTime);
+                processes[j] = running_process;
+                j++;
                 running_process=NULL;
                 q=0;
             }
@@ -299,12 +316,11 @@ void SPN(process *processes[], int number_of_processes, int total_serving_time)
 
 }
 
-void SRT(process *processes[], int number_of_processes, int total_serving_time,int quantum)
+void SRT(process *processes[], int number_of_processes, int total_serving_time)
 {
     unordered_map<int,process*> processes_map;
     priority_queue<process*, vector<process*>, comp_SRT> waiting_queue;
     process *running_process = NULL;
-    int waiting_time=0;
     int q=0;
     for (int i = 0; i < number_of_processes; i++) {
         processes_map[processes[i]->arrivalTime]=processes[i];
@@ -316,11 +332,11 @@ void SRT(process *processes[], int number_of_processes, int total_serving_time,i
             if (running_process == NULL) {
                 running_process = waiting_queue.top();
                 waiting_queue.pop();
-                q = quantum;
+                q = 1;
             }
             else if (running_process != NULL && running_process->remainingServingTime > 0 && q == 0) {
                 waiting_queue.push(running_process);
-                q = quantum;
+                q = 1;
                 running_process = waiting_queue.top();
                 waiting_queue.pop();
 
@@ -451,7 +467,6 @@ int main() {
     int num_alogs=1;
 
     string temp_string;
-    algorithm algo;
     algorithm *algos;
     cin >> mode;
     cin >> line2;
@@ -516,11 +531,10 @@ int main() {
             processes[i]->state[f] = '-';
         }
     }
-    for (int i =0;i<num_alogs-1;i++) {
-    cout<<algos[i].name<< " " << algos[i].quantum<<endl;
-    }
+
     for (int i =0;i<num_alogs-1;i++)
     {
+//        show(processes,numberOfProcesses);
         if (algos[i].name==1)
             firstComeFirstServe(processes, numberOfProcesses, totalServingTime);
         else if (algos[i].name==2)
@@ -528,18 +542,15 @@ int main() {
         else if (algos[i].name==3)
             SPN(processes, numberOfProcesses, totalServingTime);
         else if (algos[i].name==4)
-            SRT(processes, numberOfProcesses, totalServingTime,1);
+            SRT(processes, numberOfProcesses, totalServingTime);
         else if (algos[i].name==5)
             HRRN(processes, numberOfProcesses, totalServingTime);
+
         if(mode=="stats")
             state(processes, algos[i], totalServingTime, numberOfProcesses);
         else
             trace(processes, algos[i],totalServingTime, numberOfProcesses);
     }
-//    show(processes, numberOfProcesses);
-
-
-
 
     return 0;
 }
