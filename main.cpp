@@ -21,7 +21,6 @@ struct algorithm {
 void firstComeFirstServe(process *processes[], int number_of_processes, int total_serving_time) {
     queue<process *> waiting_queue;
     process *running_process = NULL;
-    queue<process> finished_queue;
     int waiting_time;
     for (int i = 0; i < number_of_processes; i++) {
         waiting_queue.push(processes[i]);
@@ -73,6 +72,74 @@ void show(process *processes[], int numberOfProcesses) {
     }
     cout << "----------------------------------------------------" << endl;
 }
+
+void trace(process *processes[], int algo, int totalServingTime, int number_of_processes) {
+    if (algo == 1)
+        cout << "FCFS  ";
+    for (int i = 0; i <= totalServingTime; i++) {
+        cout << i % 10 << " ";
+    }
+    cout << endl;
+    for (int i = 0; i <= 2 * totalServingTime + 7; i++) {
+        cout << "-";
+    }
+    cout << endl;
+    for (int i = 0; i < number_of_processes; i++) {
+        cout << processes[i]->name << "     ";
+        for (int j = 0; j <= totalServingTime; j++) {
+            cout << "|";
+            if (processes[i]->state[j] == '-')
+                cout << " ";
+            else
+                cout << processes[i]->state[j];
+        }
+    cout << endl;
+    }
+    for (int i = 0; i <= 2 * totalServingTime + 7; i++) {
+        cout << "-";
+    }
+    cout << endl;
+
+}
+
+void state(process *processes[], int algo, int totalServingTime, int number_of_processes) {
+    int mean = 0;
+    if (algo == 1)
+        cout << "FCFS" << endl;
+    cout << "Process  ";
+    for (int i = 0; i < number_of_processes; i++) {
+        cout << "  |  " << processes[i]->name;
+
+    }
+    cout << "  |" << endl;
+
+    cout << "Arrival    ";
+    for (int i = 0; i < number_of_processes; i++) {
+        printf("|%3d  ", processes[i]->arrivalTime);
+
+    }
+    cout << "|" << endl;
+    cout << "Service    ";
+    for (int i = 0; i < number_of_processes; i++) {
+        printf("|%3d  ", processes[i]->servingTime);
+
+    }
+    cout << "| Mean|" << endl;
+    cout << "Finish     ";
+    for (int i = 0; i < number_of_processes; i++) {
+        printf("|%3d  ", processes[i]->finishTime);
+
+    }
+    cout << "|-----|" << endl;
+    cout << "Turnaround ";
+    for (int i = 0; i < number_of_processes; i++) {
+        printf("|%3d  ", processes[i]->turnaroundTime);
+        mean += processes[i]->turnaroundTime;
+    }
+    printf("|%5.2f|\n", mean / float(number_of_processes));
+
+}
+
 
 
 int main() {
@@ -147,7 +214,9 @@ int main() {
     cout << numberOfProcesses << endl;
 //    show(processes, numberOfProcesses);
     firstComeFirstServe(processes, numberOfProcesses, totalServingTime);
-
+//    trace(processes, algo.name, totalServingTime, numberOfProcesses);
+//    state(processes, algo.name, totalServingTime, numberOfProcesses);
+    trace(processes, algo.name, totalServingTime, numberOfProcesses);
 
     return 0;
 }
