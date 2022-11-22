@@ -115,14 +115,14 @@ void trace(process *processes[], algorithm algo, int totalServingTime, int numbe
     cout << endl;
     for (int i = 0; i < number_of_processes; i++) {
         cout << processes[i]->name << "     ";
-        for (int j = 0; j <= totalServingTime; j++) {
+        for (int j = 0; j <= totalServingTime-1; j++) {
             cout << "|";
             if (processes[i]->state[j] == '-')
                 cout << " ";
             else
                 cout << processes[i]->state[j];
         }
-    cout << endl;
+    cout <<"| " << endl;
     }
     for (int i = 0; i <= 2 * totalServingTime + 7; i++) {
         cout << "-";
@@ -492,8 +492,8 @@ int main() {
             token = strtok(NULL, ",");
             temp_int++;
         }
-        processes[i]->state = new char[totalServingTime + 1];
-        processes[i]->state[totalServingTime] = '\0';
+        processes[i]->state = new char[totalServingTime ];
+
         for (int f = 0; f < totalServingTime; f++) {
 
             processes[i]->state[f] = '-';
