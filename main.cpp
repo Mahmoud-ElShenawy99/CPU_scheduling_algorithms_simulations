@@ -13,7 +13,17 @@ struct process {
     int turnaroundTime = -1;
 
 };
-
+struct comp_SPN{
+    bool operator()(struct process*  a, struct process* b){
+        return (a->servingTime > b->servingTime);
+    }
+};
+struct comp_SRT{
+    bool operator()(struct process*  a, struct process* b){
+        //Sorting on the basis of height(Just for example)
+        return (a->remainingServingTime > b->remainingServingTime);
+    }
+};
 struct algorithm {
     int name;
     int quantum;
@@ -74,13 +84,15 @@ void show(process *processes[], int numberOfProcesses) {
     cout << "----------------------------------------------------" << endl;
 }
 
-void trace(process *processes[], int algo, int totalServingTime, int number_of_processes) {
-    if (algo == 1)
+void trace(process *processes[], algorithm algo, int totalServingTime, int number_of_processes) {
+    if (algo.name == 1)
         cout << "FCFS  ";
-    else if (algo==2)
-        cout << "RR-1  ";
-    else if (algo==3)
+    else if (algo.name ==2)
+        cout << "RR-"<<algo.quantum<<"  ";
+    else if (algo.name==3)
         cout << "SPN   ";
+    else if (algo.name==4)
+        cout << "SRT   ";
     for (int i = 0; i <= totalServingTime; i++) {
         cout << i % 10 << " ";
     }
@@ -107,14 +119,16 @@ void trace(process *processes[], int algo, int totalServingTime, int number_of_p
 
 }
 
-void state(process *processes[], int algo, int totalServingTime, int number_of_processes) {
+void state(process *processes[], algorithm algo, int totalServingTime, int number_of_processes) {
     int mean = 0;
-    if (algo == 1)
+    if (algo.name == 1)
         cout << "FCFS" << endl;
-    else if (algo==2)
-        cout << "RR" << endl;
-    else if (algo==3)
+    else if (algo.name ==2)
+        cout << "RR-" <<algo.quantum << endl;
+    else if (algo.name ==3)
         cout << "SPN" << endl;
+    else if (algo.name ==4)
+        cout << "SRT" << endl;
 
     cout << "Process  ";
     for (int i = 0; i < number_of_processes; i++) {
@@ -214,7 +228,121 @@ void roundRobin(process *processes[], int number_of_processes, int total_serving
     }
 }
 
+void SPN(process *processes[], int number_of_processes, int total_serving_time,int quantum)
+{
+    unordered_map<int,process*> processes_map;
+    priority_queue<process*, vector<process*>, comp_SPN> waiting_queue;
+    process *running_process = NULL;
+    int waiting_time=0;
+    for (int i = 0; i < number_of_processes; i++) {
+        processes_map[processes[i]->arrivalTime]=processes[i];
+    }
+    for (int i = 0; i < total_serving_time; i++) {
+        if (processes_map.find(i) != processes_map.end())
+            waiting_queue.push(processes_map.find(i)->second);
+        if (running_process==NULL)
+        {
+            running_process=waiting_queue.top();
+            waiting_queue.pop();
+            waiting_time=running_process->arrivalTime;
+            while (waiting_time <= i) {
+                running_process->state[waiting_time] = '.';
+                waiting_time++;
+            }
+        }
+        else if(running_process!=NULL && running_process->remainingServingTime==0)
+        {
+            running_process->finishTime = i;
+            running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
+            running_process=waiting_queue.top();
+            waiting_queue.pop();
+            waiting_time=running_process->arrivalTime;
+            while (waiting_time <= i) {
+                running_process->state[waiting_time] = '.';
+                waiting_time++;
+            }
+        }
+        if(running_process->remainingServingTime>0)
+        {
+            running_process->remainingServingTime--;
+            running_process->state[i]='*';
+        }
 
+    }
+    running_process->finishTime = total_serving_time;
+    running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
+
+
+}
+
+void SRT(process *processes[], int number_of_processes, int total_serving_time,int quantum)
+{
+    unordered_map<int,process*> processes_map;
+    priority_queue<process*, vector<process*>, comp_SRT> waiting_queue;
+    process *running_process = NULL;
+    int waiting_time=0;
+    int q=0;
+    for (int i = 0; i < number_of_processes; i++) {
+        processes_map[processes[i]->arrivalTime]=processes[i];
+    }
+    for (int i = 0; i < total_serving_time; i++) {
+        if (processes_map.find(i) != processes_map.end())
+            waiting_queue.push(processes_map.find(i)->second);
+        if (q==0) {
+            if (running_process == NULL) {
+                running_process = waiting_queue.top();
+                waiting_queue.pop();
+                q = quantum;
+            }
+            else if (running_process != NULL && running_process->remainingServingTime > 0 && q == 0) {
+                waiting_queue.push(running_process);
+                q = quantum;
+                running_process = waiting_queue.top();
+                waiting_queue.pop();
+
+            }
+        }
+        if(q!=0)
+        {
+            if (running_process == NULL ) {
+                running_process = waiting_queue.top();
+                waiting_queue.pop();
+            }
+            //5adema 3aleihaa
+            running_process->remainingServingTime--;
+            running_process->state[i]='*';
+            q--;
+            if(running_process->remainingServingTime ==0)
+            {
+                running_process->finishTime = i+1;
+                running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
+                running_process=NULL;
+                q=0;
+            }
+        }
+        //less 3ayza serivce we fadel quantum 7ot odam
+        if(running_process!=NULL && running_process->remainingServingTime!=0 && q!=0 )
+        {
+            waiting_queue.push(running_process);
+            running_process=NULL;
+        }
+        for (int i = 0; i < number_of_processes; i++) {
+            for (int j = 0; j < total_serving_time; j++) {
+                if (j >= processes[i]->arrivalTime &&  j < processes[i]->finishTime)
+                    if(processes[i]->state[j] == '-')
+                        processes[i]->state[j]='.';
+            }
+        }
+    }
+    for (int i = 0; i < number_of_processes; i++) {
+        for (int j = 0; j < total_serving_time; j++) {
+            if (j >= processes[i]->arrivalTime &&  j < processes[i]->finishTime)
+                if(processes[i]->state[j] == '-')
+                    processes[i]->state[j]='.';
+        }
+    }
+
+}
 
 
 int main() {
@@ -292,11 +420,15 @@ int main() {
         firstComeFirstServe(processes, numberOfProcesses, totalServingTime);
     else if (algo.name==2)
         roundRobin(processes, numberOfProcesses, totalServingTime,algo.quantum);
+    else if (algo.name==3)
+        SPN(processes, numberOfProcesses, totalServingTime,algo.quantum);
+    else if (algo.name==4)
+        SRT(processes, numberOfProcesses, totalServingTime,1);
 
 //    show(processes, numberOfProcesses);
 
-    trace(processes, algo.name, totalServingTime, numberOfProcesses);
-    state(processes, algo.name, totalServingTime, numberOfProcesses);
+    trace(processes, algo, totalServingTime, numberOfProcesses);
+    state(processes, algo, totalServingTime, numberOfProcesses);
 
     return 0;
 }
