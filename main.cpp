@@ -11,6 +11,7 @@ struct process {
     int finishTime = -1;
     char *state;
     int turnaroundTime = -1;
+    int waitingTime=0;
     float normTurn=-1;
 };
 struct comp_SPN{
@@ -24,7 +25,12 @@ struct comp_SRT{
         return (a->remainingServingTime > b->remainingServingTime);
     }
 };
-
+struct comp_HRRN{
+    bool operator()(struct process*  a, struct process* b){
+        //Sorting on the basis of height(Just for example)
+        return ((( a->waitingTime + a->remainingServingTime)/float(a->remainingServingTime)) < (( b->waitingTime+b->remainingServingTime)/float(b->remainingServingTime)));
+    }
+};
 struct algorithm {
     int name;
     int quantum;
@@ -97,6 +103,8 @@ void trace(process *processes[], algorithm algo, int totalServingTime, int numbe
         cout << "SPN   ";
     else if (algo.name==4)
         cout << "SRT   ";
+    else if (algo.name==5)
+        cout << "HRRN  ";
     for (int i = 0; i <= totalServingTime; i++) {
         cout << i % 10 << " ";
     }
@@ -119,7 +127,7 @@ void trace(process *processes[], algorithm algo, int totalServingTime, int numbe
     for (int i = 0; i <= 2 * totalServingTime + 7; i++) {
         cout << "-";
     }
-    cout << endl;
+    cout << endl << endl;
 
 }
 
@@ -133,7 +141,8 @@ void state(process *processes[], algorithm algo, int totalServingTime, int numbe
         cout << "SPN" << endl;
     else if (algo.name ==4)
         cout << "SRT" << endl;
-
+    else if (algo.name==5)
+        cout << "HRRN"<<endl;
     cout << "Process  ";
     for (int i = 0; i < number_of_processes; i++) {
         cout << "  |  " << processes[i]->name;
@@ -171,7 +180,7 @@ void state(process *processes[], algorithm algo, int totalServingTime, int numbe
         printf("| %3.2f", processes[i]->normTurn);
         mean += processes[i]->normTurn;
     }
-    printf("|%5.2f|\n", mean / float(number_of_processes));
+    printf("|%5.2f|\n\n", mean / float(number_of_processes));
 }
 
 void roundRobin(process *processes[], int number_of_processes, int total_serving_time,int quantum)
@@ -361,6 +370,72 @@ void SRT(process *processes[], int number_of_processes, int total_serving_time,i
 
 }
 
+void HRRN(process *processes[], int number_of_processes, int total_serving_time)
+{
+    unordered_map<int,process*> processes_map;
+    queue<process*> temp_queue;
+    priority_queue<process*, vector<process*>, comp_HRRN> waiting_queue;
+    process *running_process = NULL;
+    process *temp_process=NULL;
+    int waiting_time=0;
+    for (int i = 0; i < number_of_processes; i++) {
+        processes_map[processes[i]->arrivalTime]=processes[i];
+    }
+    for (int i = 0; i < total_serving_time; i++) {
+        //If a process arrive ad it to the queue
+        while (!waiting_queue.empty()) {
+            temp_process=waiting_queue.top();
+            waiting_queue.pop();
+            temp_process->waitingTime++;
+            temp_queue.push(temp_process);
+        }
+        while (!temp_queue.empty()) {
+            waiting_queue.push(temp_queue.front());
+            temp_queue.pop();
+        }
+        if (processes_map.find(i) != processes_map.end())
+            waiting_queue.push(processes_map.find(i)->second);
+
+        //if it is the first process
+        if (running_process==NULL)
+        {
+            running_process=waiting_queue.top();
+            waiting_queue.pop();
+            waiting_time=running_process->arrivalTime;
+            while (waiting_time <= i) {
+                running_process->state[waiting_time] = '.';
+                waiting_time++;
+            }
+        }
+        //if the running process finished it serving time
+        else if(running_process!=NULL && running_process->remainingServingTime==0)
+        {
+
+            running_process->finishTime = i;
+            running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
+            running_process->normTurn=running_process->turnaroundTime/float(running_process->servingTime);
+
+            running_process=waiting_queue.top();
+            waiting_queue.pop();
+            waiting_time=running_process->arrivalTime;
+            while (waiting_time <= i) {
+                running_process->state[waiting_time] = '.';
+                waiting_time++;
+            }
+        }
+        //if the running process still need serving time
+        if(running_process->remainingServingTime>0)
+        {
+            running_process->remainingServingTime--;
+            running_process->state[i]='*';
+        }
+    }
+    running_process->finishTime = total_serving_time;
+    running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
+    running_process->normTurn=running_process->turnaroundTime/float(running_process->servingTime);
+
+}
+
 
 int main() {
 
@@ -434,6 +509,8 @@ int main() {
         SPN(processes, numberOfProcesses, totalServingTime);
     else if (algo.name==4)
         SRT(processes, numberOfProcesses, totalServingTime,1);
+    else if (algo.name==5)
+        HRRN(processes, numberOfProcesses, totalServingTime);
 
 //    show(processes, numberOfProcesses);
     if(mode=="stats")
