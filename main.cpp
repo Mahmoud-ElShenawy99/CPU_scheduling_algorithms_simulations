@@ -444,11 +444,15 @@ int main() {
     int totalServingTime;
     int numberOfProcesses;
     char *token;
+    char *token2;
     char *tem_char_array;
     int temp_int = 0;
     int temp_int2 = 0;
+    int num_alogs=1;
+
     string temp_string;
     algorithm algo;
+    algorithm *algos;
     cin >> mode;
     cin >> line2;
     cin >> totalServingTime;
@@ -456,19 +460,32 @@ int main() {
     process *processes[numberOfProcesses];
 
     {
-        temp_int = 0;
-        tem_char_array = &line2[0];
-        token = strtok(tem_char_array, "-");
-        while (token != NULL) {
-            if (temp_int == 0) {
-                sscanf(token, "%d", &temp_int2);
-                algo.name = temp_int2;
-            } else if (temp_int == 1) {
-                sscanf(token, "%d", &temp_int2);
-                algo.quantum = temp_int2;
+        tem_char_array =  &line2[0];
+        char * str1=tem_char_array;
+        char* str2;
+        token2 = strtok_r(str1, ",",&str1);
+        num_alogs=1;
+        algos = static_cast<algorithm *>(malloc(num_alogs * sizeof(struct algorithm)));
+        while (token2!=NULL)
+        {
+            algos= static_cast<algorithm *>(realloc(algos, (num_alogs) * sizeof(struct algorithm)));
+            temp_int = 0;
+            temp_int2=0;
+            str2=token2;
+            token = strtok_r(token2, "-",&str2);
+            while (token != NULL) {
+                if (temp_int == 0) {
+                    sscanf(token, "%d", &temp_int2);
+                    algos[num_alogs-1].name = temp_int2;
+                } else if (temp_int == 1) {
+                    sscanf(token, "%d", &temp_int2);
+                    algos[num_alogs-1].quantum = temp_int2;
+                }
+                token = strtok_r(str2, "-",&str2);
+                temp_int++;
             }
-            token = strtok(NULL, ",");
-            temp_int++;
+            token2 = strtok_r(str1, ",",&str1);
+            num_alogs++;
         }
     }
     temp_int = 0;
@@ -499,24 +516,30 @@ int main() {
             processes[i]->state[f] = '-';
         }
     }
-
+    for (int i =0;i<num_alogs-1;i++) {
+    cout<<algos[i].name<< " " << algos[i].quantum<<endl;
+    }
+    for (int i =0;i<num_alogs-1;i++)
+    {
+        if (algos[i].name==1)
+            firstComeFirstServe(processes, numberOfProcesses, totalServingTime);
+        else if (algos[i].name==2)
+            roundRobin(processes, numberOfProcesses, totalServingTime,algos[i].quantum);
+        else if (algos[i].name==3)
+            SPN(processes, numberOfProcesses, totalServingTime);
+        else if (algos[i].name==4)
+            SRT(processes, numberOfProcesses, totalServingTime,1);
+        else if (algos[i].name==5)
+            HRRN(processes, numberOfProcesses, totalServingTime);
+        if(mode=="stats")
+            state(processes, algos[i], totalServingTime, numberOfProcesses);
+        else
+            trace(processes, algos[i],totalServingTime, numberOfProcesses);
+    }
 //    show(processes, numberOfProcesses);
-    if (algo.name==1)
-        firstComeFirstServe(processes, numberOfProcesses, totalServingTime);
-    else if (algo.name==2)
-        roundRobin(processes, numberOfProcesses, totalServingTime,algo.quantum);
-    else if (algo.name==3)
-        SPN(processes, numberOfProcesses, totalServingTime);
-    else if (algo.name==4)
-        SRT(processes, numberOfProcesses, totalServingTime,1);
-    else if (algo.name==5)
-        HRRN(processes, numberOfProcesses, totalServingTime);
 
-//    show(processes, numberOfProcesses);
-    if(mode=="stats")
-        state(processes, algo, totalServingTime, numberOfProcesses);
-    else
-    trace(processes, algo, totalServingTime, numberOfProcesses);
+
+
 
     return 0;
 }
