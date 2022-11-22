@@ -13,6 +13,7 @@ struct process {
     int turnaroundTime = -1;
 
 };
+
 struct algorithm {
     int name;
     int quantum;
@@ -76,6 +77,10 @@ void show(process *processes[], int numberOfProcesses) {
 void trace(process *processes[], int algo, int totalServingTime, int number_of_processes) {
     if (algo == 1)
         cout << "FCFS  ";
+    else if (algo==2)
+        cout << "RR-1  ";
+    else if (algo==3)
+        cout << "SPN   ";
     for (int i = 0; i <= totalServingTime; i++) {
         cout << i % 10 << " ";
     }
@@ -106,6 +111,11 @@ void state(process *processes[], int algo, int totalServingTime, int number_of_p
     int mean = 0;
     if (algo == 1)
         cout << "FCFS" << endl;
+    else if (algo==2)
+        cout << "RR" << endl;
+    else if (algo==3)
+        cout << "SPN" << endl;
+
     cout << "Process  ";
     for (int i = 0; i < number_of_processes; i++) {
         cout << "  |  " << processes[i]->name;
@@ -140,9 +150,75 @@ void state(process *processes[], int algo, int totalServingTime, int number_of_p
 
 }
 
+void roundRobin(process *processes[], int number_of_processes, int total_serving_time,int quantum)
+{
+    unordered_map<int,process*> processes_map;
+    deque<process *> waiting_queue;
+    process *running_process = NULL;
+
+    int q=0;
+    for (int i = 0; i < number_of_processes; i++) {
+        processes_map[processes[i]->arrivalTime]=processes[i];
+    }
+
+    for (int i = 0; i < total_serving_time; i++) {
+
+        if (processes_map.find(i) != processes_map.end())
+            waiting_queue.push_back(processes_map.find(i)->second);
+        if (q==0) {
+            if (running_process == NULL) {
+                running_process = waiting_queue.front();
+                waiting_queue.pop_front();
+                q = quantum;
+            }
+            else if (running_process != NULL && running_process->remainingServingTime > 0 && q == 0) {
+                waiting_queue.push_back(running_process);
+                q = quantum;
+                running_process = waiting_queue.front();
+                waiting_queue.pop_front();
+
+            }
+        }
+        if(q!=0)
+        {
+            if (running_process == NULL ) {
+                running_process = waiting_queue.front();
+                waiting_queue.pop_front();
+            }
+            //5adema 3aleihaa
+            running_process->remainingServingTime--;
+            running_process->state[i]='*';
+            q--;
+            if(running_process->remainingServingTime ==0)
+            {
+                running_process->finishTime = i+1;
+                running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
+                running_process=NULL;
+                q=0;
+            }
+        }
+        //less 3ayza serivce we fadel quantum 7ot odam
+        if(running_process!=NULL && running_process->remainingServingTime!=0 && q!=0 )
+        {
+            waiting_queue.push_front(running_process);
+            running_process=NULL;
+        }
+
+    }
+    for (int i = 0; i < number_of_processes; i++) {
+        for (int j = 0; j < total_serving_time; j++) {
+            if (j >= processes[i]->arrivalTime &&  j < processes[i]->finishTime)
+                if(processes[i]->state[j] == '-')
+                    processes[i]->state[j]='.';
+        }
+    }
+}
+
+
 
 
 int main() {
+
     string mode;
     string line2;
     int totalServingTime;
@@ -205,7 +281,6 @@ int main() {
         }
     }
 
-
     cout << "Output data" << endl;
     cout << mode << endl;
     cout << algo.name << "\t";
@@ -213,10 +288,15 @@ int main() {
     cout << totalServingTime << endl;
     cout << numberOfProcesses << endl;
 //    show(processes, numberOfProcesses);
-    firstComeFirstServe(processes, numberOfProcesses, totalServingTime);
-//    trace(processes, algo.name, totalServingTime, numberOfProcesses);
-//    state(processes, algo.name, totalServingTime, numberOfProcesses);
+    if (algo.name==1)
+        firstComeFirstServe(processes, numberOfProcesses, totalServingTime);
+    else if (algo.name==2)
+        roundRobin(processes, numberOfProcesses, totalServingTime,algo.quantum);
+
+//    show(processes, numberOfProcesses);
+
     trace(processes, algo.name, totalServingTime, numberOfProcesses);
+    state(processes, algo.name, totalServingTime, numberOfProcesses);
 
     return 0;
 }
