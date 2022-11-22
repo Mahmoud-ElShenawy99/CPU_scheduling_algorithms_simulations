@@ -120,6 +120,10 @@ void trace(process *processes[], algorithm algo, int totalServingTime, int numbe
         cout << "SRT   ";
     else if (algo.name==5)
         cout << "HRRN  ";
+    else if (algo.name==6)
+        cout << "FB-1 ";
+    else if (algo.name==7)
+        cout << "FB-2i ";
     for (int i = 0; i <= totalServingTime; i++) {
         cout << i % 10 << " ";
     }
@@ -159,6 +163,10 @@ void state(process *processes[], algorithm algo, int totalServingTime, int numbe
         cout << "SRT" << endl;
     else if (algo.name==5)
         cout << "HRRN"<<endl;
+    else if (algo.name==6)
+        cout << "FB-1"<<endl;
+    else if (algo.name==7)
+        cout << "FB-2i"<<endl;
     cout << "Process  ";
     for (int i = 0; i < number_of_processes; i++) {
         cout << "  |  " << processes[i]->name;
@@ -452,6 +460,181 @@ void HRRN(process *processes[], int number_of_processes, int total_serving_time)
 
 }
 
+void FB2(process *processes[], int number_of_processes, int total_serving_time)
+{
+    unordered_map<int,process*> processes_map;
+    queue<process*> temp_queue;
+    vector<deque<process*>>  waiting_queues;
+    for (int i = 0; i < total_serving_time; i++)
+        waiting_queues.push_back(deque<process*>());
+    process *running_process = NULL;
+    process *temp_process=NULL;
+    int q=0,f,level=0;
+    int waiting_time=0;
+    int noza=1;
+    int empty=1;
+    for (int i = 0; i < number_of_processes; i++) {
+        processes_map[processes[i]->arrivalTime]=processes[i];
+    }
+
+    for (int i = 0; i < total_serving_time; i++) {
+        if (processes_map.find(i) != processes_map.end())
+            waiting_queues[0].push_front(processes_map.find(i)->second);
+
+        if( q==0 )
+            for (int j = 0; j < total_serving_time; j++)
+            {
+                if (waiting_queues[j].empty())
+                    continue;
+                else
+                {
+                    running_process=waiting_queues[j].front();
+                    waiting_queues[j].pop_front();
+                    q= int(pow(2, j));
+                    level=j;
+                    break;
+                }
+            }
+
+        if(q!=0)
+        {
+
+            //5adema 3aleihaa
+            running_process->remainingServingTime--;
+            running_process->state[i]='*';
+            q--;
+            if(running_process->remainingServingTime ==0)
+            {
+
+                running_process->finishTime = i+1;
+                running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
+                running_process->normTurn=running_process->turnaroundTime/float(running_process->servingTime);
+                processes[f] = running_process;
+                f++;
+                running_process=NULL;
+                q=0;
+            }
+        }
+        //less 3ayza serivce we mach fadel quantum
+        if(running_process!=NULL && running_process->remainingServingTime!=0 && q==0)
+        {
+            for (int v= 0; v < total_serving_time; v++)
+            {
+                if (waiting_queues[v].empty())
+                {
+                    empty=1;
+                    continue;
+                }
+                else
+                {
+                    empty=0;
+                    break;
+                }
+            }
+            if(empty)
+                waiting_queues[level].push_back(running_process);
+            else
+                waiting_queues[level+1].push_back(running_process);
+
+            running_process=NULL;
+        }
+    }
+    for (int i = 0; i < number_of_processes; i++) {
+        for (int j = 0; j < total_serving_time; j++) {
+            if (j >= processes[i]->arrivalTime &&  j < processes[i]->finishTime)
+                if(processes[i]->state[j] == '-')
+                    processes[i]->state[j]='.';
+        }
+    }
+}
+
+
+void FB1(process *processes[], int number_of_processes, int total_serving_time)
+{
+    unordered_map<int,process*> processes_map;
+    queue<process*> temp_queue;
+    vector<deque<process*>>  waiting_queues;
+    for (int i = 0; i < total_serving_time; i++)
+        waiting_queues.push_back(deque<process*>());
+    process *running_process = NULL;
+
+    int q=0,f,level=0;
+
+    int empty=1;
+    for (int i = 0; i < number_of_processes; i++) {
+        processes_map[processes[i]->arrivalTime]=processes[i];
+    }
+
+    for (int i = 0; i < total_serving_time; i++) {
+        if (processes_map.find(i) != processes_map.end())
+            waiting_queues[0].push_front(processes_map.find(i)->second);
+
+        if( q==0 )
+            for (int j = 0; j < total_serving_time; j++)
+            {
+                if (waiting_queues[j].empty())
+                    continue;
+                else
+                {
+                    running_process=waiting_queues[j].front();
+                    waiting_queues[j].pop_front();
+                    q= 1;
+                    level=j;
+                    break;
+                }
+            }
+
+        if(q!=0)
+        {
+
+            //5adema 3aleihaa
+            running_process->remainingServingTime--;
+            running_process->state[i]='*';
+            q--;
+            if(running_process->remainingServingTime ==0)
+            {
+
+                running_process->finishTime = i+1;
+                running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
+                running_process->normTurn=running_process->turnaroundTime/float(running_process->servingTime);
+                processes[f] = running_process;
+                f++;
+                running_process=NULL;
+                q=0;
+            }
+        }
+        //less 3ayza serivce we mach fadel quantum
+        if(running_process!=NULL && running_process->remainingServingTime!=0 && q==0)
+        {
+            for (int v= 0; v < total_serving_time; v++)
+            {
+                if (waiting_queues[v].empty())
+                {
+                    empty=1;
+                    continue;
+                }
+                else
+                {
+                    empty=0;
+                    break;
+                }
+            }
+            if(empty)
+                waiting_queues[level].push_back(running_process);
+            else
+                waiting_queues[level+1].push_back(running_process);
+
+            running_process=NULL;
+        }
+    }
+    for (int i = 0; i < number_of_processes; i++) {
+        for (int j = 0; j < total_serving_time; j++) {
+            if (j >= processes[i]->arrivalTime &&  j < processes[i]->finishTime)
+                if(processes[i]->state[j] == '-')
+                    processes[i]->state[j]='.';
+        }
+    }
+}
 
 int main() {
 
@@ -534,7 +717,6 @@ int main() {
 
     for (int i =0;i<num_alogs-1;i++)
     {
-//        show(processes,numberOfProcesses);
         if (algos[i].name==1)
             firstComeFirstServe(processes, numberOfProcesses, totalServingTime);
         else if (algos[i].name==2)
@@ -545,6 +727,10 @@ int main() {
             SRT(processes, numberOfProcesses, totalServingTime);
         else if (algos[i].name==5)
             HRRN(processes, numberOfProcesses, totalServingTime);
+        else if (algos[i].name==6)
+            FB1(processes, numberOfProcesses, totalServingTime);
+        else if (algos[i].name==7)
+            FB2(processes, numberOfProcesses, totalServingTime);
 
         if(mode=="stats")
             state(processes, algos[i], totalServingTime, numberOfProcesses);
