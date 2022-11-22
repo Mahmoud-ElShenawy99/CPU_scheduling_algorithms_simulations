@@ -11,7 +11,7 @@ struct process {
     int finishTime = -1;
     char *state;
     int turnaroundTime = -1;
-
+    float normTurn=-1;
 };
 struct comp_SPN{
     bool operator()(struct process*  a, struct process* b){
@@ -24,6 +24,7 @@ struct comp_SRT{
         return (a->remainingServingTime > b->remainingServingTime);
     }
 };
+
 struct algorithm {
     int name;
     int quantum;
@@ -49,6 +50,7 @@ void firstComeFirstServe(process *processes[], int number_of_processes, int tota
         if (running_process->remainingServingTime == 0) {
             running_process->finishTime = i;
             running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
+            running_process->normTurn=running_process->turnaroundTime/float(running_process->servingTime);
             processes[j] = running_process;
             j++;
             running_process = waiting_queue.front();
@@ -66,6 +68,8 @@ void firstComeFirstServe(process *processes[], int number_of_processes, int tota
     }
     running_process->finishTime = total_serving_time;
     running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
+    running_process->normTurn=running_process->turnaroundTime/float(running_process->servingTime);
+
     processes[number_of_processes] = running_process;
     waiting_queue.pop();
 }
@@ -120,7 +124,7 @@ void trace(process *processes[], algorithm algo, int totalServingTime, int numbe
 }
 
 void state(process *processes[], algorithm algo, int totalServingTime, int number_of_processes) {
-    int mean = 0;
+    float mean = 0;
     if (algo.name == 1)
         cout << "FCFS" << endl;
     else if (algo.name ==2)
@@ -161,7 +165,13 @@ void state(process *processes[], algorithm algo, int totalServingTime, int numbe
         mean += processes[i]->turnaroundTime;
     }
     printf("|%5.2f|\n", mean / float(number_of_processes));
-
+    mean=0;
+    cout << "NormTurn   ";
+    for (int i = 0; i < number_of_processes; i++) {
+        printf("| %3.2f", processes[i]->normTurn);
+        mean += processes[i]->normTurn;
+    }
+    printf("|%5.2f|\n", mean / float(number_of_processes));
 }
 
 void roundRobin(process *processes[], int number_of_processes, int total_serving_time,int quantum)
@@ -207,6 +217,7 @@ void roundRobin(process *processes[], int number_of_processes, int total_serving
             {
                 running_process->finishTime = i+1;
                 running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
+                running_process->normTurn=running_process->turnaroundTime/float(running_process->servingTime);
                 running_process=NULL;
                 q=0;
             }
@@ -228,7 +239,7 @@ void roundRobin(process *processes[], int number_of_processes, int total_serving
     }
 }
 
-void SPN(process *processes[], int number_of_processes, int total_serving_time,int quantum)
+void SPN(process *processes[], int number_of_processes, int total_serving_time)
 {
     unordered_map<int,process*> processes_map;
     priority_queue<process*, vector<process*>, comp_SPN> waiting_queue;
@@ -254,6 +265,8 @@ void SPN(process *processes[], int number_of_processes, int total_serving_time,i
         {
             running_process->finishTime = i;
             running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
+            running_process->normTurn=running_process->turnaroundTime/float(running_process->servingTime);
+
             running_process=waiting_queue.top();
             waiting_queue.pop();
             waiting_time=running_process->arrivalTime;
@@ -271,6 +284,8 @@ void SPN(process *processes[], int number_of_processes, int total_serving_time,i
     }
     running_process->finishTime = total_serving_time;
     running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
+    running_process->normTurn=running_process->turnaroundTime/float(running_process->servingTime);
+
 
 
 }
@@ -316,6 +331,8 @@ void SRT(process *processes[], int number_of_processes, int total_serving_time,i
             {
                 running_process->finishTime = i+1;
                 running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
+                running_process->normTurn=running_process->turnaroundTime/float(running_process->servingTime);
+
                 running_process=NULL;
                 q=0;
             }
@@ -363,7 +380,6 @@ int main() {
     cin >> numberOfProcesses;
     process *processes[numberOfProcesses];
 
-
     {
         temp_int = 0;
         tem_char_array = &line2[0];
@@ -409,26 +425,21 @@ int main() {
         }
     }
 
-    cout << "Output data" << endl;
-    cout << mode << endl;
-    cout << algo.name << "\t";
-    cout << algo.quantum << endl;
-    cout << totalServingTime << endl;
-    cout << numberOfProcesses << endl;
 //    show(processes, numberOfProcesses);
     if (algo.name==1)
         firstComeFirstServe(processes, numberOfProcesses, totalServingTime);
     else if (algo.name==2)
         roundRobin(processes, numberOfProcesses, totalServingTime,algo.quantum);
     else if (algo.name==3)
-        SPN(processes, numberOfProcesses, totalServingTime,algo.quantum);
+        SPN(processes, numberOfProcesses, totalServingTime);
     else if (algo.name==4)
         SRT(processes, numberOfProcesses, totalServingTime,1);
 
 //    show(processes, numberOfProcesses);
-
+    if(mode=="stats")
+        state(processes, algo, totalServingTime, numberOfProcesses);
+    else
     trace(processes, algo, totalServingTime, numberOfProcesses);
-    state(processes, algo, totalServingTime, numberOfProcesses);
 
     return 0;
 }
