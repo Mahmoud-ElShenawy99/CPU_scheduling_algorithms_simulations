@@ -121,7 +121,7 @@ void trace(process *processes[], algorithm algo, int totalServingTime, int numbe
     else if (algo.name==5)
         cout << "HRRN  ";
     else if (algo.name==6)
-        cout << "FB-1 ";
+        cout << "FB-1  ";
     else if (algo.name==7)
         cout << "FB-2i ";
     for (int i = 0; i <= totalServingTime; i++) {
@@ -468,10 +468,7 @@ void FB2(process *processes[], int number_of_processes, int total_serving_time)
     for (int i = 0; i < total_serving_time; i++)
         waiting_queues.push_back(deque<process*>());
     process *running_process = NULL;
-    process *temp_process=NULL;
     int q=0,f,level=0;
-    int waiting_time=0;
-    int noza=1;
     int empty=1;
     for (int i = 0; i < number_of_processes; i++) {
         processes_map[processes[i]->arrivalTime]=processes[i];
@@ -547,7 +544,6 @@ void FB2(process *processes[], int number_of_processes, int total_serving_time)
         }
     }
 }
-
 
 void FB1(process *processes[], int number_of_processes, int total_serving_time)
 {
