@@ -8,30 +8,72 @@ struct process {
     int arrivalTime;
     int servingTime;
     int remainingServingTime;
-    int finishTime=-1;
-    char * state ;
-    int turnaroundTime=-1;
+    int finishTime = -1;
+    char *state;
+    int turnaroundTime = -1;
 
 };
-struct algorithm
-{
+struct algorithm {
     int name;
     int quantum;
 };
-void show(process *processes[], int numberOfProcesses)
-{
+
+void firstComeFirstServe(process *processes[], int number_of_processes, int total_serving_time) {
+    queue<process *> waiting_queue;
+    process *running_process = NULL;
+    queue<process> finished_queue;
+    int waiting_time;
+    for (int i = 0; i < number_of_processes; i++) {
+        waiting_queue.push(processes[i]);
+    }
+
+    for (int i = 0, j = 0; i < total_serving_time; i++) {
+
+        if (running_process == NULL) {
+            running_process = waiting_queue.front();
+            waiting_queue.pop();
+            running_process->remainingServingTime--;
+            running_process->state[i] = '*';
+            continue;
+        }
+        if (running_process->remainingServingTime == 0) {
+            running_process->finishTime = i;
+            running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
+            processes[j] = running_process;
+            j++;
+            running_process = waiting_queue.front();
+            waiting_time = running_process->arrivalTime;
+            while (waiting_time <= i) {
+                running_process->state[waiting_time] = '.';
+                waiting_time++;
+            }
+            waiting_queue.pop();
+        }
+        if (running_process->remainingServingTime > 0) {
+            running_process->remainingServingTime--;
+            running_process->state[i] = '*';
+        }
+    }
+    running_process->finishTime = total_serving_time;
+    running_process->turnaroundTime = running_process->finishTime - running_process->arrivalTime;
+    processes[number_of_processes] = running_process;
+    waiting_queue.pop();
+}
+
+void show(process *processes[], int numberOfProcesses) {
     for (int i = 0; i < numberOfProcesses; i++) {
-        cout <<"Name:" << processes[i]->name <<" ";
-        cout <<"Ar:" << processes[i]->arrivalTime<<" ";
-        cout <<"SerT :" << processes[i]->servingTime << " ";
-        cout <<"Rem Ser:" << processes[i]->remainingServingTime << " ";
-        cout <<"FinT:" << processes[i]->finishTime << " ";
-        cout <<"Turn T:" << processes[i]->turnaroundTime << " ";
-        cout << "State :" << processes[i]->state << endl ;
+        cout << "Name:" << processes[i]->name << " ";
+        cout << "Ar:" << processes[i]->arrivalTime << " ";
+        cout << "SerT :" << processes[i]->servingTime << " ";
+        cout << "Rem Ser:" << processes[i]->remainingServingTime << " ";
+        cout << "FinT:" << processes[i]->finishTime << " ";
+        cout << "Turn T:" << processes[i]->turnaroundTime << " ";
+        cout << "State :" << processes[i]->state << endl;
 
     }
-    cout <<"----------------------------------------------------" <<endl;
+    cout << "----------------------------------------------------" << endl;
 }
+
 
 int main() {
     string mode;
@@ -103,7 +145,8 @@ int main() {
     cout << algo.quantum << endl;
     cout << totalServingTime << endl;
     cout << numberOfProcesses << endl;
-    show(processes, numberOfProcesses);
+//    show(processes, numberOfProcesses);
+    firstComeFirstServe(processes, numberOfProcesses, totalServingTime);
 
 
     return 0;
